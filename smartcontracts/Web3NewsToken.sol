@@ -6,10 +6,16 @@ import "./TokenVesting.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.3.3/contracts/access/AccessControl.sol";
 
 contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
-    // Define roles
+    // Minimum time intervals in seconds between function calls
+    uint256 public constant contributeInterval = 86400; // 24 hours
+    uint256 public constant readArticleInterval = 3600; // 1 hour
+    uint256 public constant shareOnSocialMediaInterval = 7200; // 2 hours
+
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant WRITER_ROLE = keccak256("WRITER_ROLE");
-    bytes32 public constant READER_ROLE = keccak256("READER_ROLE");
+
+    mapping(address => uint256) private lastContribution;
+    mapping(address => uint256) private lastArticleRead;
+    mapping(address => uint256) private lastSocialMediaShare;
 
     constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {
         _setupRole(ADMIN_ROLE, msg.sender);
@@ -19,7 +25,8 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
         address beneficiary,
         uint256 vestingStartTime,
         uint256 vestingDuration,
-        uint256 vestingCliffDuration
+        uint256 vestingCliffDuration,
+        uint256 amount
     ) public onlyRole(ADMIN_ROLE) returns (address) {
         TokenVesting tokenVesting = new TokenVesting(
             IERC20(address(this)),
@@ -28,65 +35,101 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
             vestingDuration,
             vestingCliffDuration
         );
-        grantRole(ADMIN_ROLE, address(tokenVesting));
+
+        _transfer(msg.sender, address(tokenVesting), amount);
         return address(tokenVesting);
     }
 
-    // Grant writer role to an address
-    function grantWriterRole(address writer) public onlyRole(ADMIN_ROLE) {
-        grantRole(WRITER_ROLE, writer);
+    function createVestingForTeamAndAdvisors(
+        address[] memory beneficiaries,
+        uint256[] memory vestingStartTimes,
+        uint256[] memory vestingDurations,
+        uint256[] memory vestingCliffDurations,
+        uint256[] memory amounts
+    ) public onlyRole(ADMIN_ROLE) {
+        require(
+            beneficiaries.length == vestingStartTimes.length &&
+            beneficiaries.length == vestingDurations.length &&
+            beneficiaries.length == vestingCliffDurations.length &&
+            beneficiaries.length == amounts.length,
+            "Input arrays must have the same length"
+        );
+
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            createVesting(
+                beneficiaries[i],
+                vestingStartTimes[i],
+                vestingDurations[i],
+                vestingCliffDurations[i],
+                amounts[i]
+            );
+        }
     }
 
-    // Revoke writer role from an address
-    function revokeWriterRole(address writer) public onlyRole(ADMIN_ROLE) {
-        revokeRole(WRITER_ROLE, writer);
-    }
-
-    // Grant reader role to an address
-    function grantReaderRole(address reader) public onlyRole(ADMIN_ROLE) {
-        grantRole(READER_ROLE, reader);
-    }
-
-    // Revoke reader role from an address
-    function revokeReaderRole(address reader) public onlyRole(ADMIN_ROLE) {
-        revokeRole(READER_ROLE, reader);
-    }
-
-    function contribute(string memory article) public onlyRole(WRITER_ROLE) {
+    function contribute(string memory article) public {
+        require(writers[msg.sender] == true, "Only registered writers can contribute articles");
+        require(block.timestamp - lastContribution[msg.sender] >= contributeInterval, "Minimum time interval not met for contribute");
+        lastContribution[msg.sender] = block.timestamp;
         _contribute(msg.sender, article);
     }
 
-    function readArticle() public onlyRole(READER_ROLE) {
+    function readArticle() public {
+        require(block.timestamp - lastArticleRead[msg.sender] >= readArticleInterval, "Minimum time interval not met for readArticle");
+        lastArticleRead[msg.sender] = block.timestamp;
         _readArticle(msg.sender);
     }
 
-    function shareOnSocialMedia() public onlyRole(READER_ROLE) {
+    function shareOnSocialMedia() public {
+        require(block.timestamp - lastSocialMediaShare[msg.sender] >= shareOnSocialMediaInterval, "Minimum time interval not met for shareOnSocialMedia");
+        lastSocialMediaShare[msg.sender] = block.timestamp;
         _shareOnSocialMedia(msg.sender);
     }
 
     function _contribute(address writer, string memory article) internal {
-        _mint(writer, 100 * (10 ** decimals()));
+        _mint(writer, 200 * (10 ** decimals())); // Updated reward for contributing
         emit Contribute(writer, article);
     }
 
     function _readArticle(address reader) internal {
-        _mint(reader, 10 * (10 ** decimals()));
+        _mint(reader, 15 * (10 ** decimals())); // Updated reward for reading articles
         emit ReadArticle(reader);
     }
 
     function _shareOnSocialMedia(address sharer) internal {
-        _mint(sharer, 5 * (10 ** decimals()));
+        _mint(sharer, 10 * (10 ** decimals())); // Updated reward for sharing on social media
         emit ShareOnSocialMedia(sharer);
     }
 
     function tip(address recipient, uint256 amount) public {
-        require(hasRole(WRITER_ROLE, recipient), "Recipient must have the writer role");
+        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
+        require(writers[recipient] == true, "Recipient must be a registered writer");
         _transfer(msg.sender, recipient, amount);
         emit Tip(msg.sender, recipient, amount);
     }
 
-    function distributeToProject(address projectAddress, uint256 amount) public onlyRole(ADMIN_ROLE) {
-        _transfer(msg.sender, projectAddress, amount);
-        emit ProjectDistribution(msg.sender, projectAddress, amount);
+    function distributeToProject(address projectAddress, uint256 amount) public {
+        require(msg.sender == admin, "Only admin can distribute tokens to projects");
+        require(balanceOf(admin) >= amount, "Insufficient balance");
+        _transfer(admin, projectAddress, amount);
+        emit ProjectDistribution(admin, projectAddress, amount);
+    }
+
+    function createVesting(
+        address beneficiary,
+        uint256 vestingStartTime,
+        uint256 vestingDuration,
+        uint256 vestingCliffDuration,
+        uint256 amount
+    ) public onlyRole(ADMIN_ROLE) returns (address) {
+        TokenVesting tokenVesting = new TokenVesting(
+            IERC20(address(this)),
+            beneficiary,
+            vestingStartTime,
+            vestingDuration,
+            vestingCliffDuration
+        );
+
+        _transfer(msg.sender, address(tokenVesting), amount);
+        return address(tokenVesting);
     }
 }

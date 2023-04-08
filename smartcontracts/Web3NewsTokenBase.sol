@@ -5,8 +5,8 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.3.3/contr
 
 abstract contract Web3NewsTokenBase is ERC20 {
     address public admin;
-    uint256 public constant maxTokens = 21000000 * 10 ** 10;
-    uint256 public constant reservedTokens = 5000000 * 10 ** 10;
+    uint256 public constant maxTokens = 50000000 * 10 ** 10; // Updated total supply
+    uint256 public constant reservedTokens = 10000000 * 10 ** 10; // Updated reserved tokens
 
     event Contribute(address indexed writer, string article);
     event ReadArticle(address indexed reader);
@@ -25,3 +25,4 @@ abstract contract Web3NewsTokenBase is ERC20 {
         return 10;
     }
 }
+
