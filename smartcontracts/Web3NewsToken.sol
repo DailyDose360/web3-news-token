@@ -23,6 +23,7 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
 
     constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {
         _setupRole(ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender); // Set up the Minter role for the deployer initially
     }
 
     function createVesting(
@@ -145,5 +146,9 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
         super._transfer(sender, recipient, netAmount);
         super._transfer(sender, address(0), burnAmount); // Burn tokens
         super._transfer(sender, admin, feeAmount); // Transfer fee to admin or a dedicated address
+    }
+
+    function _mint(address account, uint256 amount) public virtual override onlyRole(MINTER_ROLE) {
+        super._mint(account, amount);
     }
 }
