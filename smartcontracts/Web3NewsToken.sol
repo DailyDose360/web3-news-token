@@ -2,6 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "./Web3NewsTokenBase.sol";
+import "./TokenVesting.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.3.3/contracts/access/AccessControl.sol";
 
 contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
@@ -12,6 +13,23 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
 
     constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {
         _setupRole(ADMIN_ROLE, msg.sender);
+    }
+
+    function createVesting(
+        address beneficiary,
+        uint256 vestingStartTime,
+        uint256 vestingDuration,
+        uint256 vestingCliffDuration
+    ) public onlyRole(ADMIN_ROLE) returns (address) {
+        TokenVesting tokenVesting = new TokenVesting(
+            IERC20(address(this)),
+            beneficiary,
+            vestingStartTime,
+            vestingDuration,
+            vestingCliffDuration
+        );
+        grantRole(ADMIN_ROLE, address(tokenVesting));
+        return address(tokenVesting);
     }
 
     // Grant writer role to an address
