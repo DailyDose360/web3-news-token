@@ -57,5 +57,12 @@ contract Web3NewsToken is Web3NewsTokenBase {
         _transfer(msg.sender, recipient, amount);
         emit Tip(msg.sender, recipient, amount);
     }
+
+    function distributeToProject(address projectAddress, uint256 amount) public {
+        require(msg.sender == admin, "Only admin can distribute tokens to projects");
+        require(balanceOf(admin) >= amount, "Insufficient balance");
+        _transfer(admin, projectAddress, amount);
+        emit ProjectDistribution(admin, projectAddress, amount);
+    }
 }
 
