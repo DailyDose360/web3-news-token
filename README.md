@@ -1,84 +1,22 @@
-# Web3 News Token
-The Web3 News Token is a decentralized solution for rewarding content creators and consumers in the crypto news ecosystem. This project consists of a modular Ethereum-based ERC20 token implemented using Solidity smart contracts.
-
-## Features
-- Reward writers for contributing articles
-- Reward readers for reading articles
-- Reward users for sharing articles on social media
-- Manage writers through an admin role
+# Web3News Token
+This is a set of Solidity smart contracts for the Web3News token (W3NT). The token is an ERC20 token with additional functionality for rewarding writers, readers, and social media sharers of news articles. It also includes vesting contracts for team members and advisors.
 
 ## Contracts
-`Web3NewsTokenBase.sol`: The base contract containing data structures, events, and interfaces<br />
-`Web3NewsToken.sol`: The implementation contract containing the functions and logic
+The project contains the following contracts:
 
-## Dependencies
-[OpenZeppelin Contracts v4.3](https://github.com/OpenZeppelin/openzeppelin-contracts/tree/release-v4.3).
-
-
-## Setup
-Install [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/).
-Install Truffle globally:
-```
-npm install -g truffle
-```
-
-Clone the repository:
-```
-git clone https://github.com/<your_username>/web3-news-token.git
-cd web3-news-token
-```
-
-Install dependencies:
-```
-npm install
-```
-
-## Deployment
-Configure your preferred Ethereum network (e.g., local development network, testnet, or mainnet) in the truffle-config.js file.
-Compile the contracts:
-
-```
-truffle compile
-```
-
-Deploy the contracts:
-
-```
-truffle migrate --network <network_name>
-```
-
-## Testing
-Run tests with Truffle:
-```
-truffle test
-```
+`Web3NewsTokenBase.sol`: A base contract containing the basic ERC20 token functionality and some constants used throughout the project.
+`Web3NewsToken.sol`: The main token contract. It inherits from Web3NewsTokenBase.sol and adds functionality for rewarding writers, readers, and social media sharers.
+`Staking.sol`: A contract for staking W3NT tokens and earning rewards.
+`TokenVesting.sol`: A contract for vesting W3NT tokens for team members and advisors.
 
 ## Usage
-Interact with the smart contracts using Truffle console:
-```
-truffle console --network <network_name>
-```
+To use the contracts, first compile them using Solidity compiler. The project uses Solidity version 0.8.18, so make sure to use a compatible compiler.
 
-Example usage:
-```
-// Import the contracts
-const Web3NewsToken = artifacts.require('Web3NewsToken');
+Once the contracts are compiled, you can deploy them to a blockchain network of your choice. The Web3NewsToken.sol contract should be deployed first, and the Staking.sol and TokenVesting.sol contracts can be deployed as needed.
 
-// Deploy the token
-const reserveAddress = '0x...'; // Replace with a valid Ethereum address
-const token = await Web3NewsToken.new(reserveAddress);
+To interact with the contracts, you can use any Ethereum wallet or blockchain explorer that supports smart contract interactions. The Web3NewsToken.sol contract exposes several public functions for rewarding writers, readers, and social media sharers, as well as for tipping and distributing tokens to projects.
 
-// Add a writer
-const writer = '0x...'; // Replace with a valid Ethereum address
-await token.addWriter(writer);
-
-// Check if the writer is added
-const isWriter = await token.writers(writer);
-console.log(`Is writer? ${isWriter}`);
-```
-
-## Contributing
-We welcome contributions and improvements! Please feel free to fork this repository, make changes, and submit pull requests.
+The Staking.sol contract allows users to stake W3NT tokens and earn rewards based on a fixed reward rate per epoch. The TokenVesting.sol contract allows for vesting W3NT tokens for team members and advisors over a specified duration.
 
 ## License
-This project is licensed under the MIT License.
+The project is licensed under the MIT license. See the LICENSE file for details.
