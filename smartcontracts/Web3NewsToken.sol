@@ -50,5 +50,12 @@ contract Web3NewsToken is Web3NewsTokenBase {
         _mint(sharer, 5 * (10 ** decimals()));
         emit ShareOnSocialMedia(sharer);
     }
+
+    function tip(address recipient, uint256 amount) public {
+        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
+        require(writers[recipient] == true, "Recipient must be a registered writer");
+        _transfer(msg.sender, recipient, amount);
+        emit Tip(msg.sender, recipient, amount);
+    }
 }
 

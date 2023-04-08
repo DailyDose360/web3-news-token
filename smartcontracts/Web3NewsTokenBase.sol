@@ -13,6 +13,7 @@ abstract contract Web3NewsTokenBase is ERC20 {
     event Contribute(address indexed writer, string article);
     event ReadArticle(address indexed reader);
     event ShareOnSocialMedia(address indexed sharer);
+    event Tip(address indexed sender, address indexed recipient, uint256 amount);
 
     constructor(address reserveAddress, string memory name, string memory symbol) ERC20(name, symbol) {
         require(reserveAddress != address(0), "Invalid reserve address");
