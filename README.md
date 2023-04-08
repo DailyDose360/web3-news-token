@@ -4,10 +4,10 @@ This is a set of Solidity smart contracts for the Web3News token (W3NT). The tok
 ## Contracts
 The project contains the following contracts:
 
-`Web3NewsTokenBase.sol`: A base contract containing the basic ERC20 token functionality and some constants used throughout the project.
-`Web3NewsToken.sol`: The main token contract. It inherits from Web3NewsTokenBase.sol and adds functionality for rewarding writers, readers, and social media sharers.
-`Staking.sol`: A contract for staking W3NT tokens and earning rewards.
-`TokenVesting.sol`: A contract for vesting W3NT tokens for team members and advisors.
+`Web3NewsTokenBase.sol`: A base contract containing the basic ERC20 token functionality and some constants used throughout the project.<br />
+`Web3NewsToken.sol`: The main token contract. It inherits from Web3NewsTokenBase.sol and adds functionality for rewarding writers, readers, and social media sharers.<br />
+`Staking.sol`: A contract for staking W3NT tokens and earning rewards.<br />
+`TokenVesting.sol`: A contract for vesting W3NT tokens for team members and advisors.<br />
 
 ## Usage
 To use the contracts, first compile them using Solidity compiler. The project uses Solidity version 0.8.18, so make sure to use a compatible compiler.
