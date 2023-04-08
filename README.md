@@ -8,7 +8,7 @@ The Web3 News Token is a decentralized solution for rewarding content creators a
 - Manage writers through an admin role
 
 ## Contracts
-`Web3NewsTokenBase.sol`: The base contract containing data structures, events, and interfaces
+`Web3NewsTokenBase.sol`: The base contract containing data structures, events, and interfaces<br />
 `Web3NewsToken.sol`: The implementation contract containing the functions and logic
 
 ## Dependencies
