@@ -2,37 +2,47 @@
 pragma solidity ^0.8.18;
 
 import "./Web3NewsTokenBase.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.3.3/contracts/access/AccessControl.sol";
 
-contract Web3NewsToken is Web3NewsTokenBase {
-    // Minimum time intervals in seconds between function calls
-    uint256 public constant contributeInterval = 86400; // 24 hours
-    uint256 public constant readArticleInterval = 3600; // 1 hour
-    uint256 public constant shareOnSocialMediaInterval = 7200; // 2 hours
+contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
+    // Define roles
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant WRITER_ROLE = keccak256("WRITER_ROLE");
+    bytes32 public constant READER_ROLE = keccak256("READER_ROLE");
 
-    mapping(address => uint256) private lastContribution;
-    mapping(address => uint256) private lastArticleRead;
-    mapping(address => uint256) private lastSocialMediaShare;
+    constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {
+        _setupRole(ADMIN_ROLE, msg.sender);
+    }
 
-    constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {}
+    // Grant writer role to an address
+    function grantWriterRole(address writer) public onlyRole(ADMIN_ROLE) {
+        grantRole(WRITER_ROLE, writer);
+    }
 
-    // ... (other functions) ...
+    // Revoke writer role from an address
+    function revokeWriterRole(address writer) public onlyRole(ADMIN_ROLE) {
+        revokeRole(WRITER_ROLE, writer);
+    }
 
-    function contribute(string memory article) public {
-        require(writers[msg.sender] == true, "Only registered writers can contribute articles");
-        require(block.timestamp - lastContribution[msg.sender] >= contributeInterval, "Minimum time interval not met for contribute");
-        lastContribution[msg.sender] = block.timestamp;
+    // Grant reader role to an address
+    function grantReaderRole(address reader) public onlyRole(ADMIN_ROLE) {
+        grantRole(READER_ROLE, reader);
+    }
+
+    // Revoke reader role from an address
+    function revokeReaderRole(address reader) public onlyRole(ADMIN_ROLE) {
+        revokeRole(READER_ROLE, reader);
+    }
+
+    function contribute(string memory article) public onlyRole(WRITER_ROLE) {
         _contribute(msg.sender, article);
     }
 
-    function readArticle() public {
-        require(block.timestamp - lastArticleRead[msg.sender] >= readArticleInterval, "Minimum time interval not met for readArticle");
-        lastArticleRead[msg.sender] = block.timestamp;
+    function readArticle() public onlyRole(READER_ROLE) {
         _readArticle(msg.sender);
     }
 
-    function shareOnSocialMedia() public {
-        require(block.timestamp - lastSocialMediaShare[msg.sender] >= shareOnSocialMediaInterval, "Minimum time interval not met for shareOnSocialMedia");
-        lastSocialMediaShare[msg.sender] = block.timestamp;
+    function shareOnSocialMedia() public onlyRole(READER_ROLE) {
         _shareOnSocialMedia(msg.sender);
     }
 
@@ -52,17 +62,13 @@ contract Web3NewsToken is Web3NewsTokenBase {
     }
 
     function tip(address recipient, uint256 amount) public {
-        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
-        require(writers[recipient] == true, "Recipient must be a registered writer");
+        require(hasRole(WRITER_ROLE, recipient), "Recipient must have the writer role");
         _transfer(msg.sender, recipient, amount);
         emit Tip(msg.sender, recipient, amount);
     }
 
-    function distributeToProject(address projectAddress, uint256 amount) public {
-        require(msg.sender == admin, "Only admin can distribute tokens to projects");
-        require(balanceOf(admin) >= amount, "Insufficient balance");
-        _transfer(admin, projectAddress, amount);
-        emit ProjectDistribution(admin, projectAddress, amount);
+    function distributeToProject(address projectAddress, uint256 amount) public onlyRole(ADMIN_ROLE) {
+        _transfer(msg.sender, projectAddress, amount);
+        emit ProjectDistribution(msg.sender, projectAddress, amount);
     }
 }
-
