@@ -17,6 +17,10 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
     mapping(address => uint256) private lastArticleRead;
     mapping(address => uint256) private lastSocialMediaShare;
 
+    // Deflationary Mechanisms
+    uint256 public burnRate = 100; // 1% of the transaction amount will be burnt
+    uint256 public feeRate = 50; // 0.5% of the transaction amount will be charged as a fee
+
     constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {
         _setupRole(ADMIN_ROLE, msg.sender);
     }
@@ -131,5 +135,15 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
 
         _transfer(msg.sender, address(tokenVesting), amount);
         return address(tokenVesting);
+    }
+
+    function _transfer(address sender, address recipient, uint256 amount) internal virtual override {
+        uint256 burnAmount = (amount * burnRate) / 10000;
+        uint256 feeAmount = (amount * feeRate) / 10000;
+        uint256 netAmount = amount - burnAmount - feeAmount;
+
+        super._transfer(sender, recipient, netAmount);
+        super._transfer(sender, address(0), burnAmount); // Burn tokens
+        super._transfer(sender, admin, feeAmount); // Transfer fee to admin or a dedicated address
     }
 }
