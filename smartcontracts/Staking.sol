@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "./Web3NewsToken.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.3/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
 
 contract Staking {
     using SafeERC20 for IERC20;

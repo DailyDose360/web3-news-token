@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 import "./Web3NewsTokenBase.sol";
 import "./TokenVesting.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.3.3/contracts/access/AccessControl.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";
 
 contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
     // Minimum time intervals in seconds between function calls
