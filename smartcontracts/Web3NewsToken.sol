@@ -28,7 +28,14 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
     constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {
         _setupRole(ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender); // Set up the Minter role for the deployer initially
+
+        emit RoleAssigned(ADMIN_ROLE, msg.sender);
+        emit RoleAssigned(MINTER_ROLE, msg.sender);
+
+        _mint(msg.sender, maxTokens - reservedTokens);
+        _mint(reserveAddress, reservedTokens);
     }
+
 
     function createVesting(
         address beneficiary,
