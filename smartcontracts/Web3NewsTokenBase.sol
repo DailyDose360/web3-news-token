@@ -2,8 +2,9 @@
 pragma solidity ^0.8.18;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";
 
-abstract contract Web3NewsTokenBase is ERC20 {
+abstract contract Web3NewsTokenBase is ERC20, AccessControl {
     address public admin;
     uint256 public constant maxTokens = 50000000 * 10 ** 10; // Updated total supply
     uint256 public constant reservedTokens = 10000000 * 10 ** 10; // Updated reserved tokens
@@ -19,7 +20,6 @@ abstract contract Web3NewsTokenBase is ERC20 {
         require(reserveAddress != address(0), "Invalid reserve address");
         admin = msg.sender;
     }
-
 
     function decimals() public pure virtual override returns (uint8) {
         return 10;

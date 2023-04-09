@@ -3,9 +3,8 @@ pragma solidity ^0.8.18;
 
 import "./Web3NewsTokenBase.sol";
 import "./TokenVesting.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";
 
-contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
+contract Web3NewsToken is Web3NewsTokenBase {
     // Minimum time intervals in seconds between function calls
     uint256 public constant contributeInterval = 86400; // 24 hours
     uint256 public constant readArticleInterval = 3600; // 1 hour
@@ -13,13 +12,13 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant WRITER_ROLE = keccak256("WRITER_ROLE");
+    bytes32 public constant READER_ROLE = keccak256("READER_ROLE");
+    bytes32 public constant SHARER_ROLE = keccak256("SHARER_ROLE");
 
     mapping(address => uint256) private lastContribution;
     mapping(address => uint256) private lastArticleRead;
     mapping(address => uint256) private lastSocialMediaShare;
-
-    // Declare the roles mapping
-    mapping(address => bool) public writers;
 
     // Deflationary Mechanisms
     uint256 public burnRate = 100; // 1% of the transaction amount will be burnt
@@ -27,15 +26,24 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
 
     constructor(address reserveAddress) Web3NewsTokenBase(reserveAddress, "Web3NewsToken", "W3NT") {
         _setupRole(ADMIN_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, msg.sender); // Set up the Minter role for the deployer initially
+        _setupRole(MINTER_ROLE, address(this)); // Set up the Minter role for the contract itself
+        _setRoleAdmin(WRITER_ROLE, MINTER_ROLE);
+        _setRoleAdmin(READER_ROLE, MINTER_ROLE);
+        _setRoleAdmin(SHARER_ROLE, MINTER_ROLE);
 
         emit RoleAssigned(ADMIN_ROLE, msg.sender);
-        emit RoleAssigned(MINTER_ROLE, msg.sender);
+        emit RoleAssigned(MINTER_ROLE, address(this));
 
-        _mint(msg.sender, maxTokens - reservedTokens);
-        _mint(reserveAddress, reservedTokens);
+        uint256 deployerTokens = maxTokens - reservedTokens;
+        _initialMint(msg.sender, deployerTokens);
+
+        uint256 reserveTokensAmount = reservedTokens;
+        _initialMint(reserveAddress, reserveTokensAmount);
     }
 
+    function _initialMint(address to, uint256 amount) internal {
+        _mint(to, amount);
+    }
 
     function createVesting(
         address beneficiary,
@@ -83,63 +91,43 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
     }
 
     function contribute(string memory article) public {
-        require(writers[msg.sender] == true, "Only registered writers can contribute articles");
+        require(hasRole(WRITER_ROLE, msg.sender), "Caller is not a writer");
         require(block.timestamp - lastContribution[msg.sender] >= contributeInterval, "Minimum time interval not met for contribute");
         lastContribution[msg.sender] = block.timestamp;
         _contribute(msg.sender, article);
     }
 
-        function readArticle() public {
+    function readArticle() public {
+        require(hasRole(READER_ROLE, msg.sender), "Caller is not a reader");
         require(block.timestamp - lastArticleRead[msg.sender] >= readArticleInterval, "Minimum time interval not met for readArticle");
         lastArticleRead[msg.sender] = block.timestamp;
         _readArticle(msg.sender);
     }
 
     function shareOnSocialMedia() public {
+        require(hasRole(SHARER_ROLE, msg.sender), "Caller is not a sharer");
         require(block.timestamp - lastSocialMediaShare[msg.sender] >= shareOnSocialMediaInterval, "Minimum time interval not met for shareOnSocialMedia");
         lastSocialMediaShare[msg.sender] = block.timestamp;
         _shareOnSocialMedia(msg.sender);
     }
 
     function _contribute(address writer, string memory article) internal {
-        _mint(writer, 200 * (10 ** decimals())); // Updated reward for contributing
-        emit Contribute(writer, article);
+        _mint(writer, 200 * (10 ** decimals()));
+        // Additional logic for saving the contributed article
     }
 
     function _readArticle(address reader) internal {
-        _mint(reader, 15 * (10 ** decimals())); // Updated reward for reading articles
-        emit ReadArticle(reader);
+        _mint(reader, 10 * (10 ** decimals()));
+        // Additional logic for marking the article as read
     }
 
     function _shareOnSocialMedia(address sharer) internal {
-        _mint(sharer, 10 * (10 ** decimals())); // Updated reward for sharing on social media
-        emit ShareOnSocialMedia(sharer);
+        _mint(sharer, 20 * (10 ** decimals()));
+        // Additional logic for tracking the social media share
     }
 
-    function tip(address recipient, uint256 amount) public {
-        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
-        require(writers[recipient] == true, "Recipient must be a registered writer");
-        _transfer(msg.sender, recipient, amount);
-        emit Tip(msg.sender, recipient, amount);
-    }
-
-    function distributeToProject(address projectAddress, uint256 amount) public onlyRole(ADMIN_ROLE) {
-        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
-        _transfer(msg.sender, projectAddress, amount);
-        emit ProjectDistribution(msg.sender, projectAddress, amount);
-    }
-
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual override {
-        uint256 burnAmount = (amount * burnRate) / 10000;
-        uint256 feeAmount = (amount * feeRate) / 10000;
-        uint256 netAmount = amount - burnAmount - feeAmount;
-
-        super._transfer(sender, recipient, netAmount);
-        super._transfer(sender, address(0), burnAmount); // Burn tokens
-        super._transfer(sender, _msgSender(), feeAmount); // Transfer fee to admin or a dedicated address
-    }
-
-    function _mint(address account, uint256 amount) internal virtual override onlyRole(MINTER_ROLE) {
-        super._mint(account, amount);
+    function assignRole(bytes32 role, address account) external onlyRole(MINTER_ROLE) {
+        grantRole(role, account);
+        emit RoleAssigned(role, account);
     }
 }
