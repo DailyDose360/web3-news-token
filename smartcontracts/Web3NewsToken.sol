@@ -12,10 +12,14 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
     uint256 public constant shareOnSocialMediaInterval = 7200; // 2 hours
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     mapping(address => uint256) private lastContribution;
     mapping(address => uint256) private lastArticleRead;
     mapping(address => uint256) private lastSocialMediaShare;
+
+    // Declare the roles mapping
+    mapping(address => bool) public writers;
 
     // Deflationary Mechanisms
     uint256 public burnRate = 100; // 1% of the transaction amount will be burnt
@@ -78,7 +82,7 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
         _contribute(msg.sender, article);
     }
 
-    function readArticle() public {
+        function readArticle() public {
         require(block.timestamp - lastArticleRead[msg.sender] >= readArticleInterval, "Minimum time interval not met for readArticle");
         lastArticleRead[msg.sender] = block.timestamp;
         _readArticle(msg.sender);
@@ -112,30 +116,10 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
         emit Tip(msg.sender, recipient, amount);
     }
 
-    function distributeToProject(address projectAddress, uint256 amount) public {
-        require(msg.sender == admin, "Only admin can distribute tokens to projects");
-        require(balanceOf(admin) >= amount, "Insufficient balance");
-        _transfer(admin, projectAddress, amount);
-        emit ProjectDistribution(admin, projectAddress, amount);
-    }
-
-    function createVesting(
-        address beneficiary,
-        uint256 vestingStartTime,
-        uint256 vestingDuration,
-        uint256 vestingCliffDuration,
-        uint256 amount
-    ) public onlyRole(ADMIN_ROLE) returns (address) {
-        TokenVesting tokenVesting = new TokenVesting(
-            IERC20(address(this)),
-            beneficiary,
-            vestingStartTime,
-            vestingDuration,
-            vestingCliffDuration
-        );
-
-        _transfer(msg.sender, address(tokenVesting), amount);
-        return address(tokenVesting);
+    function distributeToProject(address projectAddress, uint256 amount) public onlyRole(ADMIN_ROLE) {
+        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
+        _transfer(msg.sender, projectAddress, amount);
+        emit ProjectDistribution(msg.sender, projectAddress, amount);
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal virtual override {
@@ -145,10 +129,10 @@ contract Web3NewsToken is Web3NewsTokenBase, AccessControl {
 
         super._transfer(sender, recipient, netAmount);
         super._transfer(sender, address(0), burnAmount); // Burn tokens
-        super._transfer(sender, admin, feeAmount); // Transfer fee to admin or a dedicated address
+        super._transfer(sender, _msgSender(), feeAmount); // Transfer fee to admin or a dedicated address
     }
 
-    function _mint(address account, uint256 amount) public virtual override onlyRole(MINTER_ROLE) {
+    function _mint(address account, uint256 amount) internal virtual override onlyRole(MINTER_ROLE) {
         super._mint(account, amount);
     }
 }
